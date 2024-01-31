@@ -4,7 +4,7 @@ import {
   bundlrStorage,
   keypairIdentity,
   Metaplex,
-  UploadMetadataInput,
+  UploadMetadataInput, 
 } from "@metaplex-foundation/js";
 require("dotenv").config();
 
