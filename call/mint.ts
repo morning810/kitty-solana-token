@@ -132,11 +132,11 @@ const createMintTokenTransaction = async (
 */
 const main = async () => {
   const secretKey: any = process.env.USER_WALLET;
-  const userWallet = Keypair.fromSecretKey(bs58.decode(secretKey));
+  const userWallet = Keypair.fromSecretKey(bs58.decode(secretKey)); // get Keypair from secretkey
   console.log("userWallet address: ", userWallet.publicKey.toString());
 
-  const network = getNetworkConfig(networkName);
-  const connection = new Connection(network.cluster);
+  const network = getNetworkConfig(networkName); 
+  const connection = new Connection(network.cluster); // network.cluster : "https://api.devnet.solana.com"
   const metaplex = getMetaplexInstance(network, connection, userWallet);
 
   // token ofchain metadata
@@ -176,12 +176,12 @@ const main = async () => {
     await createMintTokenTransaction(
       connection,
       metaplex,
-      userWallet,
+      userWallet, // payer
       mintKeypair,
       decimals,
       totalSupply,
       tokenMetadataV2,
-      userWallet.publicKey,
+      userWallet.publicKey, // destinationWallet
       userWallet.publicKey, // mintAuthority
       null, // freezeAuthority
     );

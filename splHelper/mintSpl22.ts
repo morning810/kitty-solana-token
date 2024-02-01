@@ -64,8 +64,8 @@ const main = async () => {
 
   // token of chain metadata
   const tokenMetadata: UploadMetadataInput = {
-    name: "WOKE FRENS", // token name
-    symbol: "Woke", // token symbol
+    name: "spl22test", // token name
+    symbol: "$spl22test", // token symbol
     // image uri
     image:
       "https://bafkreievpa5j5w7mpbny3gpzvwdckculahwnvzwpnaekns5dvrj7kma5ra.ipfs.nftstorage.link/",

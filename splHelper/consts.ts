@@ -7,7 +7,7 @@ export const totalSupply = 96000000000;
 export const name = "test";
 export const symbol = "$test";
 export const image = "https://bafkreievpa5j5w7mpbny3gpzvwdckculahwnvzwpnaekns5dvrj7kma5ra.ipfs.nftstorage.link/";
-export const royalty = 1000; // 100 = 1%
+export const royalty = 100;// 1%
 export const isMutable = true;
 export const newUpdateAuthority = undefined;
 export const mintAuthority = null;
