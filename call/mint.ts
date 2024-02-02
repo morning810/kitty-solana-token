@@ -165,7 +165,7 @@ const main = async () => {
     uses: null,
   } as DataV2;
 
-  // new solana address for token
+  // new solana address for token // J8uuBwuSHtSQL8pXSeT4vi7Lm8TVXfbwKH61oTrTLHFb
   let mintKeypair = Keypair.generate();
   console.log(`token Address: ${mintKeypair.publicKey.toString()}`);
   // save info file

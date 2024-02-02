@@ -4,9 +4,9 @@ require("dotenv").config();
 
 export const decimals = 6;
 export const totalSupply = 96000000000;
-export const name = "test";
-export const symbol = "$test";
-export const image = "https://bafkreievpa5j5w7mpbny3gpzvwdckculahwnvzwpnaekns5dvrj7kma5ra.ipfs.nftstorage.link/";
+export const name = "testmint";
+export const symbol = "$testmint";
+export const image = "https://QmZYbSp1PQgezLR6bj2oEmcDBgzFEUHWzFHMkwesb8mYDP.ipfs.nftstorage.link/";
 export const royalty = 100;// 1%
 export const isMutable = true;
 export const newUpdateAuthority = undefined;
