@@ -30,7 +30,9 @@ import {
   getTransferFeeAmount,
   withdrawWithheldTokensFromAccounts,
   harvestWithheldTokensToMint,
-  createInitializeMetadataPointerInstruction
+  createInitializeMetadataPointerInstruction,
+  getMint,
+  getMetadataPointerState
 } from "@solana/spl-token";
 import {
   createInitializeInstruction,
@@ -79,7 +81,6 @@ const main = async () => {
   const mintAuthority = userWallet;
   const mintKeypair = Keypair.generate();
   const mint = mintKeypair.publicKey;
-  const metadata_address = Keypair.generate().publicKey;
 
   console.log("mint address : ", mint);
 
@@ -104,8 +105,8 @@ const main = async () => {
   const metaData: TokenMetadata = {
     updateAuthority: userWallet.publicKey,
     mint: mint,
-    name: "OPOS",
-    symbol: "OPOS",
+    name: "OPOS1",
+    symbol: "OPOS1",
     uri: "https://bafkreievpa5j5w7mpbny3gpzvwdckculahwnvzwpnaekns5dvrj7kma5ra.ipfs.nftstorage.link/",
     additionalMetadata: [["description", "Only Possible On Solana"]],
   };
@@ -131,6 +132,7 @@ const main = async () => {
       lamports: mintLamports,
       programId: TOKEN_2022_PROGRAM_ID,
     }),
+
     createInitializeMetadataPointerInstruction(
       mint, // Mint Account address
       userWallet.publicKey, // Authority that can set the metadata address
@@ -144,6 +146,7 @@ const main = async () => {
       null,
       TOKEN_2022_PROGRAM_ID
     ),
+
     createInitializeInstruction({
       programId: TOKEN_2022_PROGRAM_ID, // Token Extension Program as Metadata Program
       metadata: mint, //metadata_address, // Account address that holds the metadata
@@ -154,14 +157,15 @@ const main = async () => {
       symbol: metaData.symbol,
       uri: metaData.uri,
     }),
-    // createInitializeTransferFeeConfigInstruction(
-    //   mint,
-    //   transferFeeConfigAuthority.publicKey,
-    //   withdrawWithheldAuthority.publicKey,
-    //   feeBasisPoints,
-    //   maxFee,
-    //   TOKEN_2022_PROGRAM_ID
-    // ),    
+    createInitializeTransferFeeConfigInstruction(
+      mint,
+      transferFeeConfigAuthority.publicKey,
+      withdrawWithheldAuthority.publicKey,
+      feeBasisPoints,
+      maxFee,
+      TOKEN_2022_PROGRAM_ID
+    ),
+    
     // createUpdateFieldInstruction({
     //   programId: TOKEN_2022_PROGRAM_ID, // Token Extension Program as Metadata Program
     //   metadata: mint, // Account address that holds the metadata
@@ -177,6 +181,17 @@ const main = async () => {
     undefined
   );
   console.log("New Token Created:", txUrl(newTokenTx));
+
+  const mintInfo = await getMint(
+    connection,
+    mint,
+    "confirmed",
+    TOKEN_2022_PROGRAM_ID,
+  );
+  // Retrieve and log the metadata pointer state
+  const metadataPointer = getMetadataPointerState(mintInfo);
+  console.log("\nMetadata Pointer:", JSON.stringify(metadataPointer, null, 2));
+
 
   // Step 3 - Mint tokens to Owner
   const owner = Keypair.generate();

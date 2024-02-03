@@ -6,7 +6,7 @@ import * as fs from 'fs';
 
 //************************************************************** */
 const keypair = Keypair.fromSecretKey(bs58.decode("your wallet public key"));
-const secret_array = keypair.secretKey    
+const secret_array = keypair.secretKey
     .toString() //convert secret key to string
     .split(',') //delimit string by commas and convert to an array of strings
     .map(value=>Number(value)); //convert string values to numbers inside the array
