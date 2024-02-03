@@ -29,18 +29,16 @@ import {
   unpackAccount,
   getTransferFeeAmount,
   withdrawWithheldTokensFromAccounts,
-  harvestWithheldTokensToMint
+  harvestWithheldTokensToMint,
+  createInitializeMetadataPointerInstruction
 } from "@solana/spl-token";
 import {
-  DataV2,
-  createCreateMetadataAccountV3Instruction,
-} from "@metaplex-foundation/mpl-token-metadata";
-import {
-  bundlrStorage,
-  keypairIdentity,
-  Metaplex,
-  UploadMetadataInput,
-} from "@metaplex-foundation/js";
+  createInitializeInstruction,
+  createUpdateFieldInstruction,
+  pack,
+  TokenMetadata,
+} from "@solana/spl-token-metadata";
+
 import { bs58 } from "@project-serum/anchor/dist/cjs/utils/bytes";
 import {
   getMetaplexInstance,
@@ -48,7 +46,25 @@ import {
   txUrl,
   uploadMetadata,
 } from "./helper";
+import * as fs from 'fs';
 require("dotenv").config();
+
+
+// const keypair = Keypair.fromSecretKey(bs58.decode("2i5qH8vr7cefDUjRWEd3qBY8PGseWYcr8saAxzL2bCd6RfeCP6CNFghY7Bqf1UWAozFAkrCc8Huz5eumgT2PvFrC"));
+// const secret_array = keypair.secretKey    
+//     .toString() //convert secret key to string
+//     .split(',') //delimit string by commas and convert to an array of strings
+//     .map(value=>Number(value)); //convert string values to numbers inside the array
+// console.log("==", secret_array)
+// const secret = JSON.stringify(secret_array); //Covert to JSON string
+
+// fs.writeFile('guideSecret.json', secret, 'utf8', function(err) {
+//     if (err) throw err;
+//     console.log('Wrote secret key to guideSecret.json.');
+// });
+
+
+
 
 /* 
  main function
@@ -60,62 +76,22 @@ const main = async () => {
   const userWallet = Keypair.fromSecretKey(bs58.decode(secretKey));
   console.log("userWallet address: ", userWallet.publicKey.toString());
 
-  // create metaplex instance
-  const metaplex = getMetaplexInstance(network, connection, userWallet);
-
-  // token data
-  const token = {
-    decimals: 6,
-    totalSupply: 96000000000, //96,000,000,000
-  };
-
-  // token of chain metadata
-  const tokenMetadata: UploadMetadataInput = {
-    name: "spl22test", // token name
-    symbol: "$spl22test", // token symbol
-    sellerFeeBasisPoints: 100, // royalty 1%
-    // image uri
-    image:
-      "https://bafkreievpa5j5w7mpbny3gpzvwdckculahwnvzwpnaekns5dvrj7kma5ra.ipfs.nftstorage.link/",
-  };
-
-  // upload metadata
-  let metadataUri = await uploadMetadata(metaplex, tokenMetadata);
-
-  // convert metadata in V2
-  const tokenMetadataV2 = {
-    name: tokenMetadata.name,
-    symbol: tokenMetadata.symbol,
-    uri: metadataUri, // uploaded metadata uri
-    sellerFeeBasisPoints: 100, // royalty 1%
-    creators: [{ address: userWallet.publicKey, share: 100 }],
-    collection: null,
-    uses: null,
-  } as DataV2;
-
-  /* 
-  // 
-  */
-
   // Generate keys for payer, mint authority, and mint
   const payer = userWallet;
-  const mintAuthority = Keypair.generate();
-  const mintKeypair = Keypair.generate();
-  const mint = mintKeypair.publicKey;
+  const mintAuthority = userWallet;
+  const mintKeypair = userWallet;
+  const mint = Keypair.generate().publicKey;
+  const metadata_address = Keypair.generate().publicKey;
+
+  console.log("mint address : ", mint);
 
   // Generate keys for transfer fee config authority and withdrawal authority
-  const transferFeeConfigAuthority = Keypair.generate();
-  const withdrawWithheldAuthority = Keypair.generate();
-
-  // Define the extensions to be used by the mint
-  const extensions = [ExtensionType.TransferFeeConfig];
-
-  // Calculate the length of the mint
-  const mintLen = getMintLen(extensions);
+  const transferFeeConfigAuthority = userWallet;
+  const withdrawWithheldAuthority = userWallet; //Keypair.generate();
 
   // Set the decimals, fee basis points, and maximum fee
   const decimals = 9;
-  const feeBasisPoints = 100; // 1%
+  const feeBasisPoints = 350; // 1%
   const maxFee = BigInt(9 * Math.pow(10, decimals)); // 9 tokens
 
   // Define the amount to be minted and the amount to be transferred, accounting for decimals
@@ -126,15 +102,29 @@ const main = async () => {
   const calcFee = (transferAmount * BigInt(feeBasisPoints)) / BigInt(10_000); // expect 10 fee
   const fee = calcFee > maxFee ? maxFee : calcFee; // expect 9 fee
 
-  // Step 2 - Create a New Token
-  const metadataPDA = metaplex
-    .nfts()
-    .pdas()
-    .metadata({ mint: mintKeypair.publicKey });
+  // Metadata to store in Mint Account
+  const metaData: TokenMetadata = {
+    updateAuthority: userWallet.publicKey,
+    mint: mint,
+    name: "OPOS",
+    symbol: "OPOS",
+    uri: "https://bafkreievpa5j5w7mpbny3gpzvwdckculahwnvzwpnaekns5dvrj7kma5ra.ipfs.nftstorage.link/",
+    additionalMetadata: [["description", "Only Possible On Solana"]],
+  };
 
+  // Size of MetadataExtension 2 bytes for type, 2 bytes for length
+  const metadataExtension = TYPE_SIZE + LENGTH_SIZE;
+  // Size of metadata
+  const metadataLen = pack(metaData).length;
+
+  // Size of Mint Account with extension
+  const mintLen = getMintLen([ExtensionType.MetadataPointer]);
+
+  // Minimum lamports required for Mint Account
   const mintLamports = await connection.getMinimumBalanceForRentExemption(
-    mintLen
+    mintLen + metadataExtension + metadataLen,
   );
+
   const mintTransaction = new Transaction().add(
     SystemProgram.createAccount({
       fromPubkey: payer.publicKey,
@@ -157,12 +147,36 @@ const main = async () => {
       mintAuthority.publicKey,
       null,
       TOKEN_2022_PROGRAM_ID
-    )
+    ),
+    createInitializeInstruction({
+      programId: TOKEN_2022_PROGRAM_ID, // Token Extension Program as Metadata Program
+      metadata: metadata_address, // Account address that holds the metadata
+      updateAuthority: userWallet.publicKey, // Authority that can update the metadata
+      mint: mint, // Mint Account address
+      mintAuthority: mintAuthority.publicKey, // Designated Mint Authority
+      name: metaData.name,
+      symbol: metaData.symbol,
+      uri: metaData.uri,
+    }),
+    createInitializeMetadataPointerInstruction(
+      mint, // Mint Account address
+      userWallet.publicKey, // Authority that can set the metadata address
+      metadata_address, // Account address that holds the metadata
+      TOKEN_2022_PROGRAM_ID,
+    ),
+    
+    // createUpdateFieldInstruction({
+    //   programId: TOKEN_2022_PROGRAM_ID, // Token Extension Program as Metadata Program
+    //   metadata: mint, // Account address that holds the metadata
+    //   updateAuthority: userWallet.publicKey, // Authority that can update the metadata
+    //   field: metaData.additionalMetadata[0][0], // key
+    //   value: metaData.additionalMetadata[0][1], // value
+    // })
   );
   const newTokenTx = await sendAndConfirmTransaction(
     connection,
     mintTransaction,
-    [payer, mintKeypair],
+    [payer],
     undefined
   );
   console.log("New Token Created:", txUrl(newTokenTx));
@@ -238,24 +252,24 @@ const main = async () => {
       connection,
       payer,
       mint,
-      destinationAccount,
+      feeVaultAccount,//destinationAccount,
       withdrawWithheldAuthority,
       [],
       accountsToWithdrawFrom
   );
   console.log("Withdraw from Accounts:", txUrl(withdrawSig1));
 
-  // Harvest withheld fees from Token Accounts to Mint Account
-  withdrawSig1 = await harvestWithheldTokensToMint(
-    connection,
-    payer, // Transaction fee payer
-    mint, // Mint Account address
-    [destinationAccount], // Source Token Accounts for fee harvesting
-    undefined, // Confirmation options
-    TOKEN_2022_PROGRAM_ID, // Token Extension Program ID
-  );
-  console.log("Harvest Fee To Mint Account:", txUrl(withdrawSig1));
+  // // Harvest withheld fees from Token Accounts to Mint Account
+  // withdrawSig1 = await harvestWithheldTokensToMint(
+  //   connection,
+  //   payer, // Transaction fee payer
+  //   mint, // Mint Account address
+  //   [destinationAccount], // Source Token Accounts for fee harvesting
+  //   undefined, // Confirmation options
+  //   TOKEN_2022_PROGRAM_ID, // Token Extension Program ID
+  // );
+  // console.log("Harvest Fee To Mint Account:", txUrl(withdrawSig1));
 
 };
 
-main();
+//main();
