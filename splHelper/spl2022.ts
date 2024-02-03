@@ -86,7 +86,7 @@ const main = async () => {
 
   // Generate keys for transfer fee config authority and withdrawal authority
   const transferFeeConfigAuthority = userWallet;
-  const withdrawWithheldAuthority = userWallet; //Keypair.generate();
+  const withdrawWithheldAuthority = userWallet;
 
   // Set the decimals, fee basis points, and maximum fee
   const decimals = 2;
@@ -105,8 +105,8 @@ const main = async () => {
   const metaData: TokenMetadata = {
     updateAuthority: userWallet.publicKey,
     mint: mint,
-    name: "OPOS1",
-    symbol: "OPOS1",
+    name: "OPOS3",
+    symbol: "OPOS3",
     uri: "https://bafkreievpa5j5w7mpbny3gpzvwdckculahwnvzwpnaekns5dvrj7kma5ra.ipfs.nftstorage.link/",
     additionalMetadata: [["description", "Only Possible On Solana"]],
   };
@@ -121,7 +121,7 @@ const main = async () => {
   const fee_mintLen = getMintLen([ExtensionType.TransferFeeConfig]);
   // Minimum lamports required for Mint Account
   const mintLamports = await connection.getMinimumBalanceForRentExemption(
-    pointer_mintlen + metadataExtension + fee_mintLen + metadataLen,
+    pointer_mintlen + metadataExtension,
   );
 
   const mintTransaction = new Transaction().add(
@@ -132,12 +132,19 @@ const main = async () => {
       lamports: mintLamports,
       programId: TOKEN_2022_PROGRAM_ID,
     }),
-
-    createInitializeMetadataPointerInstruction(
-      mint, // Mint Account address
-      userWallet.publicKey, // Authority that can set the metadata address
-      mint,// metadata_address, // Account address that holds the metadata
-      TOKEN_2022_PROGRAM_ID,
+    // createInitializeMetadataPointerInstruction(
+    //   mint, // Mint Account address
+    //   userWallet.publicKey, // Authority that can set the metadata address
+    //   mint,// metadata_address, // Account address that holds the metadata
+    //   TOKEN_2022_PROGRAM_ID,
+    // ),
+    createInitializeTransferFeeConfigInstruction(
+      userWallet.publicKey,
+      transferFeeConfigAuthority.publicKey,
+      withdrawWithheldAuthority.publicKey,
+      feeBasisPoints,
+      maxFee,
+      TOKEN_2022_PROGRAM_ID
     ),
     createInitializeMintInstruction(
       mint,
@@ -146,25 +153,16 @@ const main = async () => {
       null,
       TOKEN_2022_PROGRAM_ID
     ),
-
-    createInitializeInstruction({
-      programId: TOKEN_2022_PROGRAM_ID, // Token Extension Program as Metadata Program
-      metadata: mint, //metadata_address, // Account address that holds the metadata
-      updateAuthority: userWallet.publicKey, // Authority that can update the metadata
-      mint: mint, // Mint Account address
-      mintAuthority: mintAuthority.publicKey, // Designated Mint Authority
-      name: metaData.name,
-      symbol: metaData.symbol,
-      uri: metaData.uri,
-    }),
-    createInitializeTransferFeeConfigInstruction(
-      mint,
-      transferFeeConfigAuthority.publicKey,
-      withdrawWithheldAuthority.publicKey,
-      feeBasisPoints,
-      maxFee,
-      TOKEN_2022_PROGRAM_ID
-    ),
+    // createInitializeInstruction({
+    //   programId: TOKEN_2022_PROGRAM_ID, // Token Extension Program as Metadata Program
+    //   metadata: mint, //metadata_address, // Account address that holds the metadata
+    //   updateAuthority: userWallet.publicKey, // Authority that can update the metadata
+    //   mint: mint, // Mint Account address
+    //   mintAuthority: mintAuthority.publicKey, // Designated Mint Authority
+    //   name: metaData.name,
+    //   symbol: metaData.symbol,
+    //   uri: metaData.uri,
+    // }),
     
     // createUpdateFieldInstruction({
     //   programId: TOKEN_2022_PROGRAM_ID, // Token Extension Program as Metadata Program
