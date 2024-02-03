@@ -61,37 +61,37 @@ const main = async () => {
   console.log("userWallet address: ", userWallet.publicKey.toString());
 
   // create metaplex instance
-  const metaplex = getMetaplexInstance(network, connection, userWallet);
+  // const metaplex = getMetaplexInstance(network, connection, userWallet);
 
   // token data
-  const token = {
-    decimals: 6,
-    totalSupply: 96000000000, //96,000,000,000
-  };
+  // const token = {
+  //   decimals: 6,
+  //   totalSupply: 96000000000, //96,000,000,000
+  // };
 
   // token of chain metadata
-  const tokenMetadata: UploadMetadataInput = {
-    name: "spl22test", // token name
-    symbol: "$spl22test", // token symbol
-    sellerFeeBasisPoints: 100, // royalty 1%
-    // image uri
-    image:
-      "https://bafkreievpa5j5w7mpbny3gpzvwdckculahwnvzwpnaekns5dvrj7kma5ra.ipfs.nftstorage.link/",
-  };
+  // const tokenMetadata: UploadMetadataInput = {
+  //   name: "spl22test", // token name
+  //   symbol: "$spl22test", // token symbol
+  //   sellerFeeBasisPoints: 100, // royalty 1%
+  //   // image uri
+  //   image:
+  //     "https://bafkreievpa5j5w7mpbny3gpzvwdckculahwnvzwpnaekns5dvrj7kma5ra.ipfs.nftstorage.link/",
+  // };
 
   // upload metadata
-  let metadataUri = await uploadMetadata(metaplex, tokenMetadata);
+  // let metadataUri = await uploadMetadata(metaplex, tokenMetadata);
 
-  // convert metadata in V2
-  const tokenMetadataV2 = {
-    name: tokenMetadata.name,
-    symbol: tokenMetadata.symbol,
-    uri: metadataUri, // uploaded metadata uri
-    sellerFeeBasisPoints: 100, // royalty 1%
-    creators: [{ address: userWallet.publicKey, share: 100 }],
-    collection: null,
-    uses: null,
-  } as DataV2;
+  // // convert metadata in V2
+  // const tokenMetadataV2 = {
+  //   name: tokenMetadata.name,
+  //   symbol: tokenMetadata.symbol,
+  //   uri: metadataUri, // uploaded metadata uri
+  //   sellerFeeBasisPoints: 100, // royalty 1%
+  //   creators: [{ address: userWallet.publicKey, share: 100 }],
+  //   collection: null,
+  //   uses: null,
+  // } as DataV2;
 
   /* 
   // 
@@ -127,10 +127,10 @@ const main = async () => {
   const fee = calcFee > maxFee ? maxFee : calcFee; // expect 9 fee
 
   // Step 2 - Create a New Token
-  const metadataPDA = metaplex
-    .nfts()
-    .pdas()
-    .metadata({ mint: mintKeypair.publicKey });
+  // const metadataPDA = metaplex
+  //   .nfts()
+  //   .pdas()
+  //   .metadata({ mint: mintKeypair.publicKey });
 
   const mintLamports = await connection.getMinimumBalanceForRentExemption(
     mintLen
@@ -238,7 +238,7 @@ const main = async () => {
       connection,
       payer,
       mint,
-      destinationAccount,
+      feeVaultAccount,
       withdrawWithheldAuthority,
       [],
       accountsToWithdrawFrom
@@ -250,7 +250,7 @@ const main = async () => {
     connection,
     payer, // Transaction fee payer
     mint, // Mint Account address
-    [destinationAccount], // Source Token Accounts for fee harvesting
+    [feeVaultAccount], // Source Token Accounts for fee harvesting
     undefined, // Confirmation options
     TOKEN_2022_PROGRAM_ID, // Token Extension Program ID
   );
