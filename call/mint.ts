@@ -9,7 +9,7 @@ import {
 } from "@solana/web3.js";
 import {
   MINT_SIZE,
-  TOKEN_PROGRAM_ID,
+  TOKEN_2022_PROGRAM_ID,
   createInitializeMintInstruction,
   getMinimumBalanceForRentExemptMint,
   getAssociatedTokenAddress,
@@ -72,7 +72,7 @@ const createMintTokenTransaction = async (
       newAccountPubkey: mintKeypair.publicKey,
       space: MINT_SIZE,
       lamports: requiredBalance,
-      programId: TOKEN_PROGRAM_ID,
+      programId: TOKEN_2022_PROGRAM_ID,
     }),
     // 2nd
     createInitializeMintInstruction(
@@ -80,7 +80,7 @@ const createMintTokenTransaction = async (
       decimals,
       mintAuthority,
       freezeAuthority,
-      TOKEN_PROGRAM_ID
+      TOKEN_2022_PROGRAM_ID
     ),
     // 3rd
     createAssociatedTokenAccountInstruction(

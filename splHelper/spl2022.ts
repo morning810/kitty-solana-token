@@ -89,15 +89,17 @@ const main = async () => {
   // Set the decimals, fee basis points, and maximum fee
   const decimals = 9;
   const feeBasisPoints = 350; // 1%
-  const maxFee = BigInt(9 * Math.pow(10, decimals)); // 9 tokens
+  const maxFee = BigInt(1_000 * Math.pow(10, decimals));
 
   // Define the amount to be minted and the amount to be transferred, accounting for decimals
   const mintAmount = BigInt(1_000_000 * Math.pow(10, decimals)); // Mint 1,000,000 tokens
   const transferAmount = BigInt(1_000 * Math.pow(10, decimals)); // Transfer 1,000 tokens
 
   // Calculate the fee for the transfer
-  const calcFee = (transferAmount * BigInt(feeBasisPoints)) / BigInt(10_000); // expect 10 fee
-  const fee = calcFee > maxFee ? maxFee : calcFee; // expect 9 fee
+  const calcFee = (transferAmount * BigInt(feeBasisPoints)) / BigInt(10_000);
+  const fee = calcFee > maxFee ? maxFee : calcFee;
+
+  console.log("======== fee : ", BigInt(fee) / BigInt(Math.pow(10, decimals)));
 
   // Metadata to store in Mint Account
   const metaData: TokenMetadata = {
@@ -125,16 +127,16 @@ const main = async () => {
     SystemProgram.createAccount({
       fromPubkey: payer.publicKey,
       newAccountPubkey: mint,
-      space: fee_mintLen, // + pointer_mintlen + metadataExtension + metadataLen,
+      space: fee_mintLen + pointer_mintlen + metadataExtension + metadataLen,
       lamports: mintLamports,
       programId: TOKEN_2022_PROGRAM_ID,
     }),
-    // createInitializeMetadataPointerInstruction(
-    //   mint, // Mint Account address
-    //   userWallet.publicKey, // Authority that can set the metadata address
-    //   mint,// metadata_address, // Account address that holds the metadata
-    //   TOKEN_2022_PROGRAM_ID,
-    // ),
+    createInitializeMetadataPointerInstruction(
+      mint, // Mint Account address
+      userWallet.publicKey, // Authority that can set the metadata address
+      mint,// metadata_address, // Account address that holds the metadata
+      TOKEN_2022_PROGRAM_ID,
+    ),
     createInitializeTransferFeeConfigInstruction(
       mint,
       transferFeeConfigAuthority.publicKey,
@@ -150,16 +152,16 @@ const main = async () => {
       null,
       TOKEN_2022_PROGRAM_ID
     ),
-    // createInitializeInstruction({
-    //   programId: TOKEN_2022_PROGRAM_ID, // Token Extension Program as Metadata Program
-    //   metadata: mint, //metadata_address, // Account address that holds the metadata
-    //   updateAuthority: userWallet.publicKey, // Authority that can update the metadata
-    //   mint: mint, // Mint Account address
-    //   mintAuthority: mintAuthority.publicKey, // Designated Mint Authority
-    //   name: metaData.name,
-    //   symbol: metaData.symbol,
-    //   uri: metaData.uri,
-    // }),
+    createInitializeInstruction({
+      programId: TOKEN_2022_PROGRAM_ID, // Token Extension Program as Metadata Program
+      metadata: mint, //metadata_address, // Account address that holds the metadata
+      updateAuthority: userWallet.publicKey, // Authority that can update the metadata
+      mint: mint, // Mint Account address
+      mintAuthority: mintAuthority.publicKey, // Designated Mint Authority
+      name: metaData.name,
+      symbol: metaData.symbol,
+      uri: metaData.uri,
+    }),
     
     // createUpdateFieldInstruction({
     //   programId: TOKEN_2022_PROGRAM_ID, // Token Extension Program as Metadata Program

@@ -116,7 +116,7 @@ const main = async () => {
   // Set the decimals, fee basis points, and maximum fee
   const decimals = 9;
   const feeBasisPoints = 100; // 1%
-  const maxFee = BigInt(9 * Math.pow(10, decimals)); // 9 tokens
+  const maxFee = BigInt(1_000 * Math.pow(10, decimals)); // 9 tokens
 
   // Define the amount to be minted and the amount to be transferred, accounting for decimals
   const mintAmount = BigInt(1_000_000 * Math.pow(10, decimals)); // Mint 1,000,000 tokens
@@ -126,6 +126,8 @@ const main = async () => {
   const calcFee = (transferAmount * BigInt(feeBasisPoints)) / BigInt(10_000); // expect 10 fee
   const fee = calcFee > maxFee ? maxFee : calcFee; // expect 9 fee
 
+  console.log("====== fee:", fee);
+  
   // Step 2 - Create a New Token
   // const metadataPDA = metaplex
   //   .nfts()
