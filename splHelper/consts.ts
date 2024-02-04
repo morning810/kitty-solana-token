@@ -1,4 +1,5 @@
 import { getFileData, writeFileData } from "./helper";
+import { PublicKey } from "@solana/web3.js"
 import { toPublicKey } from "@metaplex-foundation/js";
 require("dotenv").config();
 
@@ -13,6 +14,8 @@ export const newUpdateAuthority = undefined;
 export const mintAuthority = null;
 export const freezeAuthority = null;
 export const verifySignerAsCreator = true;
+export const METADATA_2022_PROGRAM_ID = new PublicKey("META4s4fSmpkTbZoUsgC1oBnWB31vQcmnN8giPw51Zu")
+export const METADATA_2022_PROGRAM_ID_TESTNET = new PublicKey("M1tgEZCz7fHqRAR3G5RLxU6c6ceQiZyFK7tzzy4Rof4")
 
 export const networkName = !!process.env.NETWORK
   ? process.env.NETWORK

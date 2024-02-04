@@ -60,43 +60,6 @@ const main = async () => {
   const userWallet = Keypair.fromSecretKey(bs58.decode(secretKey));
   console.log("userWallet address: ", userWallet.publicKey.toString());
 
-  // create metaplex instance
-  // const metaplex = getMetaplexInstance(network, connection, userWallet);
-
-  // token data
-  // const token = {
-  //   decimals: 6,
-  //   totalSupply: 96000000000, //96,000,000,000
-  // };
-
-  // token of chain metadata
-  // const tokenMetadata: UploadMetadataInput = {
-  //   name: "spl22test", // token name
-  //   symbol: "$spl22test", // token symbol
-  //   sellerFeeBasisPoints: 100, // royalty 1%
-  //   // image uri
-  //   image:
-  //     "https://bafkreievpa5j5w7mpbny3gpzvwdckculahwnvzwpnaekns5dvrj7kma5ra.ipfs.nftstorage.link/",
-  // };
-
-  // upload metadata
-  // let metadataUri = await uploadMetadata(metaplex, tokenMetadata);
-
-  // // convert metadata in V2
-  // const tokenMetadataV2 = {
-  //   name: tokenMetadata.name,
-  //   symbol: tokenMetadata.symbol,
-  //   uri: metadataUri, // uploaded metadata uri
-  //   sellerFeeBasisPoints: 100, // royalty 1%
-  //   creators: [{ address: userWallet.publicKey, share: 100 }],
-  //   collection: null,
-  //   uses: null,
-  // } as DataV2;
-
-  /* 
-  // 
-  */
-
   // Generate keys for payer, mint authority, and mint
   const payer = userWallet;
   const mintAuthority = Keypair.generate();

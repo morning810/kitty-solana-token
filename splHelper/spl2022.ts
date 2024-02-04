@@ -48,23 +48,13 @@ import {
   txUrl,
   uploadMetadata,
 } from "./helper";
+import {
+  deploySPLToken,
+  createNewToken
+} from "./create";
 // import * as fs from 'fs';
 require("dotenv").config();
 
-//************************************************************** */
-// const keypair = Keypair.fromSecretKey(bs58.decode("eK5jWERmFedYGd1DvQ9k2oBHPx8nGMt2raDBwbANutRKht2UWT3fxp3hNhUPbKD1pZor6XaFbmxvsi1wGqFXMGa"));
-// const secret_array = keypair.secretKey    
-//     .toString() //convert secret key to string
-//     .split(',') //delimit string by commas and convert to an array of strings
-//     .map(value=>Number(value)); //convert string values to numbers inside the array
-// console.log("==", secret_array)
-// const secret = JSON.stringify(secret_array); //Covert to JSON string
-
-// fs.writeFile('guideSecret.json', secret, 'utf8', function(err) {
-//     if (err) throw err;
-//     console.log('Wrote secret key to guideSecret.json.');
-// });
-//************************************************************** */
 
 /*
  main function
@@ -77,197 +67,46 @@ const main = async () => {
   console.log("userWallet address: ", userWallet.publicKey.toString());
 
   // Generate keys for payer, mint authority, and mint
-  const payer = userWallet;
+  const payer = userWallet
   const mintAuthority = userWallet;
   const mintKeypair = Keypair.generate();
   const mint = mintKeypair.publicKey;
-
   // Generate keys for transfer fee config authority and withdrawal authority
-  const transferFeeConfigAuthority = userWallet;
-  const withdrawWithheldAuthority = userWallet;
+  const transferFeeConfigAuthority = payer;
+  const withdrawWithheldAuthority = payer;
+  // Generate keys for payer, mint authority, and mint
+  const owner = payer;
+  const decimals = 6;
+  const feeBasisPoints = Number("3.5") * 100; // 3.5%
+  const uri = "https://bafkreievpa5j5w7mpbny3gpzvwdckculahwnvzwpnaekns5dvrj7kma5ra.ipfs.nftstorage.link/"
+  console.log("Metadata uploaded:", uri);
 
-  // Set the decimals, fee basis points, and maximum fee
-  const decimals = 9;
-  const feeBasisPoints = 350; // 1%
-  const maxFee = BigInt(1_000 * Math.pow(10, decimals));
 
-  // Define the amount to be minted and the amount to be transferred, accounting for decimals
-  const mintAmount = BigInt(1_000_000 * Math.pow(10, decimals)); // Mint 1,000,000 tokens
-  const transferAmount = BigInt(1_000 * Math.pow(10, decimals)); // Transfer 1,000 tokens
+  const mintAmount = BigInt(Number("30000000") * Math.pow(10, decimals)); // Mint 1,000,000 tokens
+  //const maxFee = BigInt(9 * Math.pow(10, decimals)); // 9 tokens
+  const maxFee = mintAmount
 
-  // Calculate the fee for the transfer
-  const calcFee = (transferAmount * BigInt(feeBasisPoints)) / BigInt(10_000);
-  const fee = calcFee > maxFee ? maxFee : calcFee;
-
-  console.log("======== fee : ", BigInt(fee) / BigInt(Math.pow(10, decimals)));
-
-  // Metadata to store in Mint Account
-  const metaData: TokenMetadata = {
-    updateAuthority: userWallet.publicKey,
-    mint: mint,
-    name: "OPOS3",
-    symbol: "OPOS3",
-    uri: "https://bafkreievpa5j5w7mpbny3gpzvwdckculahwnvzwpnaekns5dvrj7kma5ra.ipfs.nftstorage.link/",
-    additionalMetadata: [["description", "Only Possible On Solana"]],
-  };
-
-  // Size of MetadataExtension 2 bytes for type, 2 bytes for length
-  const metadataExtension = TYPE_SIZE + LENGTH_SIZE;
-  // Size of metadata
-  const metadataLen = pack(metaData).length;
-  // Size of Mint Account with extension
-  const pointer_mintlen = getMintLen([ExtensionType.MetadataPointer]);
-  const fee_mintLen = getMintLen([ExtensionType.TransferFeeConfig]);
-  // Minimum lamports required for Mint Account
-  const mintLamports = await connection.getMinimumBalanceForRentExemption(
-    pointer_mintlen + metadataExtension + metadataLen + fee_mintLen,
-  );
-
-  const mintTransaction = new Transaction().add(
-    SystemProgram.createAccount({
-      fromPubkey: payer.publicKey,
-      newAccountPubkey: mint,
-      space: fee_mintLen + pointer_mintlen + metadataExtension + metadataLen,
-      lamports: mintLamports,
-      programId: TOKEN_2022_PROGRAM_ID,
-    }),
-    createInitializeMetadataPointerInstruction(
-      mint, // Mint Account address
-      userWallet.publicKey, // Authority that can set the metadata address
-      mint,// metadata_address, // Account address that holds the metadata
-      TOKEN_2022_PROGRAM_ID,
-    ),
-    createInitializeTransferFeeConfigInstruction(
-      mint,
-      transferFeeConfigAuthority.publicKey,
-      withdrawWithheldAuthority.publicKey,
-      feeBasisPoints,
-      maxFee,
-      TOKEN_2022_PROGRAM_ID
-    ),
-    createInitializeMintInstruction(
-      mint,
-      decimals,
-      mintAuthority.publicKey,
-      null,
-      TOKEN_2022_PROGRAM_ID
-    ),
-    createInitializeInstruction({
-      programId: TOKEN_2022_PROGRAM_ID, // Token Extension Program as Metadata Program
-      metadata: mint, //metadata_address, // Account address that holds the metadata
-      updateAuthority: userWallet.publicKey, // Authority that can update the metadata
-      mint: mint, // Mint Account address
-      mintAuthority: mintAuthority.publicKey, // Designated Mint Authority
-      name: metaData.name,
-      symbol: metaData.symbol,
-      uri: metaData.uri,
-    }),
-    
-    // createUpdateFieldInstruction({
-    //   programId: TOKEN_2022_PROGRAM_ID, // Token Extension Program as Metadata Program
-    //   metadata: mint, // Account address that holds the metadata
-    //   updateAuthority: userWallet.publicKey, // Authority that can update the metadata
-    //   field: metaData.additionalMetadata[0][0], // key
-    //   value: metaData.additionalMetadata[0][1], // value
-    // })
-  );
-  const newTokenTx = await sendAndConfirmTransaction(
-    connection,
-    mintTransaction,
-    [payer, mintKeypair],
-    undefined
-  );
-  console.log("New Token Created:", txUrl(newTokenTx));
+  // Step 2 - Create a New Token
+  const newTokenTx = await createNewToken(
+    connection, 
+    payer, 
+    mintKeypair, 
+    mint, 
+    decimals, 
+    mintAuthority, 
+    transferFeeConfigAuthority, 
+    withdrawWithheldAuthority, 
+    feeBasisPoints, 
+    maxFee, 
+    "ttt", "$ttt", "description", uri);
+  //console.log("New Token Created:", generateExplorerTxUrl(newTokenTx));
+  console.log("Token Address:", mint.toBase58());
 
   // Step 3 - Mint tokens to Owner
-  const owner = Keypair.generate();
-  const sourceAccount = await createAssociatedTokenAccountIdempotent(
-    connection,
-    payer,
-    mint,
-    owner.publicKey,
-    {},
-    TOKEN_2022_PROGRAM_ID
-  );
-  console.log("================sourceAccount : ", sourceAccount);
-  const mintSig = await mintTo(
-    connection,
-    payer,
-    mint,
-    sourceAccount,
-    mintAuthority,
-    mintAmount,
-    [],
-    undefined,
-    TOKEN_2022_PROGRAM_ID
-  );
+  const sourceAccount = await createAssociatedTokenAccountIdempotent(connection, payer, mint, owner.publicKey, {}, TOKEN_2022_PROGRAM_ID);
+  const mintSig = await mintTo(connection, payer, mint, sourceAccount, mintAuthority, mintAmount, [], undefined, TOKEN_2022_PROGRAM_ID);
   console.log("Tokens Minted:", txUrl(mintSig));
 
-  // Step 4 - Send Tokens from Owner to a New Account
-  const destinationOwner = Keypair.generate();
-  const destinationAccount = await createAssociatedTokenAccountIdempotent(connection, payer, mint, destinationOwner.publicKey, {}, TOKEN_2022_PROGRAM_ID);
-  const transferSig = await transferCheckedWithFee(
-      connection,
-      payer,
-      sourceAccount,
-      mint,
-      destinationAccount,
-      owner,
-      transferAmount,
-      decimals,
-      fee,
-      []
-  );
-  console.log("Tokens Transfered:", txUrl(transferSig));
-
-  // Step 5 - Fetch Fee Accounts
-  const allAccounts = await connection.getProgramAccounts(TOKEN_2022_PROGRAM_ID, {
-      commitment: 'confirmed',
-      filters: [
-          {
-              memcmp: {
-                  offset: 0,
-                  bytes: mint.toString(),
-              },
-          },
-      ],
-  });
-
-  const accountsToWithdrawFrom: PublicKey[] = [];
-  for (const accountInfo of allAccounts) {
-      const account = unpackAccount(accountInfo.pubkey, accountInfo.account, TOKEN_2022_PROGRAM_ID);
-      const transferFeeAmount = getTransferFeeAmount(account);
-      if (transferFeeAmount !== null && transferFeeAmount.withheldAmount > BigInt(0)) {
-          accountsToWithdrawFrom.push(accountInfo.pubkey);
-      }
-  }
-  
-  // Step 6 - Harvest Fees
-  const feeVault = Keypair.generate();
-  const feeVaultAccount = await createAssociatedTokenAccountIdempotent(connection, payer, mint, feeVault.publicKey, {}, TOKEN_2022_PROGRAM_ID);
-
-  let withdrawSig1 = await withdrawWithheldTokensFromAccounts(
-      connection,
-      payer,
-      mint,
-      feeVaultAccount,//destinationAccount,
-      withdrawWithheldAuthority,
-      [],
-      accountsToWithdrawFrom
-  );
-  console.log("Withdraw from Accounts:", txUrl(withdrawSig1));
-
-  // Harvest withheld fees from Token Accounts to Mint Account
-  withdrawSig1 = await harvestWithheldTokensToMint(
-    connection,
-    payer, // Transaction fee payer
-    mint, // Mint Account address
-    [feeVaultAccount], // Source Token Accounts for fee harvesting
-    undefined, // Confirmation options
-    TOKEN_2022_PROGRAM_ID, // Token Extension Program ID
-  );
-  console.log("Harvest Fee To Mint Account:", txUrl(withdrawSig1));
-
-};
-
+  return mintKeypair.publicKey.toBase58()
+}
 main();
