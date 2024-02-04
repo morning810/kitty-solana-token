@@ -1,18 +1,21 @@
 import { getFileData, writeFileData } from "./helper";
+import { PublicKey } from "@solana/web3.js"
 import { toPublicKey } from "@metaplex-foundation/js";
 require("dotenv").config();
 
 export const decimals = 6;
 export const totalSupply = 96000000000;
-export const name = "test";
-export const symbol = "$test";
-export const image = "https://bafkreievpa5j5w7mpbny3gpzvwdckculahwnvzwpnaekns5dvrj7kma5ra.ipfs.nftstorage.link/";
-export const royalty = 1000; // 100 = 1%
+export const name = "logo";
+export const symbol = "$log";
+export const image = "https://QmZYbSp1PQgezLR6bj2oEmcDBgzFEUHWzFHMkwesb8mYDP.ipfs.nftstorage.link/";
+export const royalty = 350;// 1%
 export const isMutable = true;
 export const newUpdateAuthority = undefined;
 export const mintAuthority = null;
 export const freezeAuthority = null;
 export const verifySignerAsCreator = true;
+export const METADATA_2022_PROGRAM_ID = new PublicKey("META4s4fSmpkTbZoUsgC1oBnWB31vQcmnN8giPw51Zu")
+export const METADATA_2022_PROGRAM_ID_TESTNET = new PublicKey("M1tgEZCz7fHqRAR3G5RLxU6c6ceQiZyFK7tzzy4Rof4")
 
 export const networkName = !!process.env.NETWORK
   ? process.env.NETWORK

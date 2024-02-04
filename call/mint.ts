@@ -9,7 +9,7 @@ import {
 } from "@solana/web3.js";
 import {
   MINT_SIZE,
-  TOKEN_PROGRAM_ID,
+  TOKEN_2022_PROGRAM_ID,
   createInitializeMintInstruction,
   getMinimumBalanceForRentExemptMint,
   getAssociatedTokenAddress,
@@ -72,7 +72,7 @@ const createMintTokenTransaction = async (
       newAccountPubkey: mintKeypair.publicKey,
       space: MINT_SIZE,
       lamports: requiredBalance,
-      programId: TOKEN_PROGRAM_ID,
+      programId: TOKEN_2022_PROGRAM_ID,
     }),
     // 2nd
     createInitializeMintInstruction(
@@ -80,7 +80,7 @@ const createMintTokenTransaction = async (
       decimals,
       mintAuthority,
       freezeAuthority,
-      TOKEN_PROGRAM_ID
+      TOKEN_2022_PROGRAM_ID
     ),
     // 3rd
     createAssociatedTokenAccountInstruction(
@@ -132,11 +132,11 @@ const createMintTokenTransaction = async (
 */
 const main = async () => {
   const secretKey: any = process.env.USER_WALLET;
-  const userWallet = Keypair.fromSecretKey(bs58.decode(secretKey));
+  const userWallet = Keypair.fromSecretKey(bs58.decode(secretKey)); // get Keypair from secretkey
   console.log("userWallet address: ", userWallet.publicKey.toString());
 
-  const network = getNetworkConfig(networkName);
-  const connection = new Connection(network.cluster);
+  const network = getNetworkConfig(networkName); 
+  const connection = new Connection(network.cluster); // network.cluster : "https://api.devnet.solana.com"
   const metaplex = getMetaplexInstance(network, connection, userWallet);
 
   // token ofchain metadata
@@ -165,7 +165,7 @@ const main = async () => {
     uses: null,
   } as DataV2;
 
-  // new solana address for token
+  // new solana address for token // J8uuBwuSHtSQL8pXSeT4vi7Lm8TVXfbwKH61oTrTLHFb
   let mintKeypair = Keypair.generate();
   console.log(`token Address: ${mintKeypair.publicKey.toString()}`);
   // save info file
@@ -176,12 +176,12 @@ const main = async () => {
     await createMintTokenTransaction(
       connection,
       metaplex,
-      userWallet,
+      userWallet, // payer
       mintKeypair,
       decimals,
       totalSupply,
       tokenMetadataV2,
-      userWallet.publicKey,
+      userWallet.publicKey, // destinationWallet
       userWallet.publicKey, // mintAuthority
       null, // freezeAuthority
     );

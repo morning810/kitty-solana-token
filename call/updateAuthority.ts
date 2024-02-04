@@ -33,10 +33,11 @@ const main = async () => {
   console.log(`Updating Authority of Token: ${MINT_ADDRESS}`);
   const network = getNetworkConfig(networkName);
   const connection = new Connection(network.cluster);
-
-  if (!mintAuthority){
-    throw Error("mintAuthority is not set.")
-  }
+  
+  const mintAuthority = Keypair.generate();
+  // if (!mintAuthority){
+  //   throw Error("mintAuthority is not set.")
+  // }
   let authorityTransaction = new Transaction().add(
     createSetAuthorityInstruction(
       toPublicKey(MINT_ADDRESS), // mint acocunt || token account
